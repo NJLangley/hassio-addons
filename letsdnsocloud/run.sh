@@ -1,5 +1,6 @@
 #!/bin/bash
 . functions.sh
+. logging.sh
 set -e
 
 CERT_DIR=/data/letsencrypt
@@ -23,7 +24,7 @@ function ip_add_or_update() {
 
     #Loop through domains setting up A records
     for DOMAIN in $LE_DOMAINS; do
-        echo "Checking DNS records for $DOMAIN"
+        logInfo "Checking DNS records for $DOMAIN"
 
         #Extract Zone ID for Domain
         grabzoneid $DOMAIN
@@ -33,14 +34,14 @@ function ip_add_or_update() {
         #Create A Record or update existing with current IP
         if [ -z "$AID" ]
         then
-            echo "Creating DNS A Record for $DOMAIN"
+            logInfo "DNS A Record for $DOMAIN"
             createarecord $DOMAIN $NEWIP
         elif [ "$AIP" != "$NEWIP" ]
         then
-            echo "Updating DNS A Record for $DOMAIN"
+            logInfo "Updating DNS A Record for $DOMAIN"
             updateip $DOMAIN $NEWIP
         else
-            echo "DNS A Record is up to date for $DOMAIN"
+            logInfo "DNS A Record is up to date for $DOMAIN"
         fi
     done
 }

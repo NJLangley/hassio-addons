@@ -1,5 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2034
+. logging.sh
 
 set -e
 
@@ -16,7 +17,7 @@ deploy_challenge() {
      	-H "Content-Type: application/json"\
      	--data '{"type":"TXT","name":"_acme-challenge.'$1'","content":"'$3'","ttl":120,"priority":10,"proxied":false}' > /dev/null
 
-    echo "Waiting 30 seconds before deleting for LE"
+    logInfo "Waiting 30 seconds before deleting for LE"
     sleep 30
 
     # This hook is called once for every domain that needs to be

@@ -1,4 +1,5 @@
 #!/bin/bash
+. logging.sh
 
 #Extract Zone ID for root domain
 function grabzoneid() {
@@ -32,9 +33,10 @@ function grabaid() {
     AID=$(echo $ARECORD | jq -r '.id')
     AIP=$(echo $ARECORD | jq -r '.content')
   else
+    # Reset cached values
     AID=""
     AIP=""
-    echo "No A record found for $DOMAIN"
+    logInfo "No A record found for $DOMAIN"
   fi
 }
 
@@ -49,10 +51,10 @@ function createarecord() {
     -H "Content-Type: application/json"\
     --data '{"type":"A","name":"'$DOMAIN'","content":"'$IP'","proxied":false}')
   #  | jq
-  echo $RESPONSE | jq
+  #echo $RESPONSE | jq
   # TODO: Add error handling for web request fails
 
-  echo "A record created for $DOMAIN at $IP"
+  logMessage "A record created for $DOMAIN at $IP"
 }
 
 #Update A record IP address
@@ -73,9 +75,24 @@ function updateip() {
     -H "Content-Type: application/json"\
     --data '{"type":"A","name":"'$DOMAIN'","content":"'$IP'","proxied":false}')
   #  | jq
-  echo $RESPONSE | jq
+  #echo $RESPONSE | jq
   # TODO: Add error handling for web request fails
 
-  echo "Updated A record for $DOMAIN with IP: $IP"
+  logInfo "Updated A record for $DOMAIN with IP: $IP"
+}
 
+function logError(){
+  logMessage "ERROR" $1
+}
+
+function logWarning(){
+  logMessage "WARNING" $1
+}
+
+function logInfo(){
+  logMessage "INFO" $1
+}
+
+function logMessage(){
+  echo "[$(date +%Y-%m-%d) $(date +%T)] [$1]: $2"
 }
