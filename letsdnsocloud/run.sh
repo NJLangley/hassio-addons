@@ -21,23 +21,29 @@ WAIT_TIME=$(jq --raw-output '.seconds' $CONFIG_PATH)
 
 #Grab current ip
 OLDIP="0.0.0.0"
-NEWIP=$(curl -s "https://ipinfo.io/ip")
 
-
-
+# Update the DNS A records if required
 function ip_add_or_update() {
     for DOMAIN in $LE_DOMAINS; do
+        echo "Checking DNS records for $DOMAIN"
+
         #Extract Zone ID for Domain
         grabzoneid
         #Exract A record ID if one exists already
         grabaid
 
+        echo "A Record ID:          $AID"
+        echo "A Record IP Address:  $AIP"
+
         #Create A Record or update existing with current IP
         if [ -z "$AID" ]
         then
             createarecord
-        else
+        elif [ "$AIP" != "$NEWIP" ]
+        then
             updateip $NEWIP
+        else
+            echo "DNS A Record is up to date for $DOMAIN"
         fi
 
         # Reset the old IP to the current IP
@@ -45,11 +51,7 @@ function ip_add_or_update() {
     done
 }
 
-
-
-
 # Register/generate certificate if terms accepted
-
 function le_renew() {
     local domain_args=()
     # Prepare domain for Let's Encrypt
