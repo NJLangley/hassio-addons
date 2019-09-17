@@ -14,40 +14,34 @@ LE_UPDATE="0"
 #CloudFlare Deets
 export CF_APIKEY=$(jq --raw-output '.cfapikey' $CONFIG_PATH)
 export CF_EMAIL=$(jq --raw-output '.cfemail' $CONFIG_PATH)
-
-#-------
-DOMAINS=$(jq --raw-output '.domains | join(",")' $CONFIG_PATH)
 WAIT_TIME=$(jq --raw-output '.seconds' $CONFIG_PATH)
-
-#Grab current ip
-OLDIP="0.0.0.0"
 
 # Update the DNS A records if required
 function ip_add_or_update() {
+    #Grab current ip
+    NEWIP=$(curl -s "https://ipinfo.io/ip")
+
+    #Loop through domains setting up A records
     for DOMAIN in $LE_DOMAINS; do
         echo "Checking DNS records for $DOMAIN"
 
         #Extract Zone ID for Domain
-        grabzoneid
+        grabzoneid $DOMAIN
         #Exract A record ID if one exists already
-        grabaid
-
-        echo "A Record ID:          $AID"
-        echo "A Record IP Address:  $AIP"
+        grabaid $DOMAIN
 
         #Create A Record or update existing with current IP
         if [ -z "$AID" ]
         then
-            createarecord
+            echo "Creating DNS A Record for $DOMAIN"
+            createarecord $DOMAIN $NEWIP
         elif [ "$AIP" != "$NEWIP" ]
         then
-            updateip $NEWIP
+            echo "Updating DNS A Record for $DOMAIN"
+            updateip $DOMAIN $NEWIP
         else
             echo "DNS A Record is up to date for $DOMAIN"
         fi
-
-        # Reset the old IP to the current IP
-        OLDIP=$NEWIP
     done
 }
 
@@ -77,13 +71,8 @@ fi
 
 # Loop: Watch for new IP and update. Renew Cert after 30 days
 while true; do
-
-    NEWIP=$(curl -s "https://ipinfo.io/ip")
-
-    if [ "$IP" != "$NEWIP" ]; then
-      updateip $NEWIP
-    fi
-
+    ip_add_or_update
+    
     now="$(date +%s)"
     if [ "$LE_TERMS" == "true" ] && [ $((now - LE_UPDATE)) -ge 43200 ]; then
         le_renew
