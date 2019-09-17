@@ -4,13 +4,13 @@
 function grabzoneid() {
 
   #Strip Subdomain to get bare domain
-  BASEDOMAIN=$(sed 's/.*\.\(.*\..*\)/\1/' <<< $LE_DOMAINS)
+  #BASEDOMAIN=$(sed 's/.*\.\(.*\..*\)/\1/' <<< $DOMAIN)
 
   #Grab Zoneid & Export for Hooks.sh
   export ZONEID=$(curl -sX GET "https://api.cloudflare.com/client/v4/zones" \
     -H "X-Auth-Email: $CF_EMAIL" \
     -H "X-Auth-Key: $CF_APIKEY" \
-    -H "Content-Type: application/json" | jq -r '.result[] | (select(.name | contains("'$BASEDOMAIN'"))) | .id')
+    -H "Content-Type: application/json" | jq -r --arg DOMAIN "$DOMAIN" '.result[] | (select(.name | contains($DOMAIN))) | .id')
 }
 
 #Grab id from existing A record
@@ -19,7 +19,7 @@ function grabaid() {
   AID=$(curl -sX GET "https://api.cloudflare.com/client/v4/zones/$ZONEID/dns_records" \
     -H "X-Auth-Email: $CF_EMAIL"\
     -H "X-Auth-Key: $CF_APIKEY"\
-    -H "Content-Type: application/json" | jq -r '.result[] | (select(.name | contains("'$LE_DOMAINS'"))) | (select (.type | contains("A"))) | .id')
+    -H "Content-Type: application/json" | jq -r --arg DOMAIN "$DOMAIN"'.result[] | (select(.name | contains($DOMAIN))) | (select (.type | contains("A"))) | .id')
 
 }
 
@@ -30,9 +30,9 @@ function createarecord() {
     -H "X-Auth-Email: $CF_EMAIL"\
     -H "X-Auth-Key: $CF_APIKEY"\
     -H "Content-Type: application/json"\
-    --data '{"type":"A","name":"'$LE_DOMAINS'","content":"'$IP'","proxied":false}' -o /dev/null
+    --data '{"type":"A","name":"'$DOMAIN'","content":"'$IP'","proxied":false}' -o /dev/null
 
-echo "A record created for $LE_DOMAINS at $IP"
+echo "A record created for $DOMAIN at $IP"
 
 }
 
@@ -43,8 +43,8 @@ function updateip() {
     -H "X-Auth-Email: $CF_EMAIL"\
     -H "X-Auth-Key: $CF_APIKEY"\
     -H "Content-Type: application/json"\
-    --data '{"type":"A","name":"'$LE_DOMAINS'","content":"'$1'","proxied":false}' -o /dev/null
+    --data '{"type":"A","name":"'$DOMAIN'","content":"'$1'","proxied":false}' -o /dev/null
 
-  echo "Updated $LE_DOMAINS with IP: $1"
+  echo "Updated $DOMAIN with IP: $1"
 
 }

@@ -19,21 +19,34 @@ export CF_EMAIL=$(jq --raw-output '.cfemail' $CONFIG_PATH)
 DOMAINS=$(jq --raw-output '.domains | join(",")' $CONFIG_PATH)
 WAIT_TIME=$(jq --raw-output '.seconds' $CONFIG_PATH)
 
-#Extract Zone ID for Domain
-grabzoneid
-#Exract A record ID if one exists already
-grabaid
-
 #Grab current ip
-IP=$(curl -s "https://ipinfo.io/ip")
+OLDIP="0.0.0.0"
+NEWIP=$(curl -s "https://ipinfo.io/ip")
 
-#Create A Record or update existing with current IP
-if [ -z "$AID" ]
-  then
-    createarecord
-  else
-    updateip $IP
-fi
+
+
+function ip_add_or_update() {
+    for DOMAIN in $LE_DOMAINS; do
+        #Extract Zone ID for Domain
+        grabzoneid
+        #Exract A record ID if one exists already
+        grabaid
+
+        #Create A Record or update existing with current IP
+        if [ -z "$AID" ]
+        then
+            createarecord
+        else
+            updateip $NEWIP
+        fi
+
+        # Reset the old IP to the current IP
+        OLDIP=$NEWIP
+    done
+}
+
+
+
 
 # Register/generate certificate if terms accepted
 
